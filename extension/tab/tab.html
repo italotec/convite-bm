@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="tab.css" />
+  <title>Convite BM</title>
+</head>
+<body>
+  <div class="cb-wrap">
+    <div class="cb-header">
+      <div class="cb-mark">CB</div>
+      <div class="cb-title">
+        <div class="cb-name">Convite BM</div>
+        <div class="cb-tag">convites automáticos de Business Manager</div>
+      </div>
+      <div class="cb-header-actions">
+        <button id="btnRefresh" class="cb-btn cb-btn-ghost" title="Atualizar">&#8635; Atualizar</button>
+      </div>
+    </div>
+
+    <div id="viewNoContext" class="cb-empty hidden">
+      <p>Não encontramos uma aba aberta em <span class="cb-mono">business.facebook.com</span>.</p>
+      <p>Abrindo uma automaticamente — se nada acontecer, faça login e abra qualquer Business Manager, depois clique em Atualizar.</p>
+    </div>
+
+    <div id="viewMain" class="hidden">
+
+      <div class="cb-summary">
+        <div class="cb-summary-item">
+          <span class="cb-k">E-mail de destino</span>
+          <span class="cb-v cb-mono" id="fEmail">—</span>
+        </div>
+        <div class="cb-summary-item">
+          <span class="cb-k">Perfil AdsPower</span>
+          <span class="cb-v cb-mono" id="fProfile">—</span>
+          <button id="btnManualProfile" class="cb-link-btn" type="button">definir manualmente</button>
+        </div>
+        <div class="cb-summary-item">
+          <span class="cb-k">BMs no perfil</span>
+          <span class="cb-v" id="fTotal">—</span>
+        </div>
+        <div class="cb-summary-item">
+          <span class="cb-k">Já convidados</span>
+          <span class="cb-v" id="fAlready">—</span>
+        </div>
+      </div>
+
+      <div id="manualProfileForm" class="cb-manual-form hidden">
+        <input id="manualProfileId" class="cb-input" placeholder="ID do perfil AdsPower (ex: k1fbfn6u)" />
+        <input id="manualSerialNumber" class="cb-input" placeholder="Nº de série (opcional)" />
+        <button id="btnManualSave" class="cb-btn cb-btn-secondary" type="button">Salvar</button>
+        <button id="btnManualRemove" class="cb-btn cb-btn-ghost" type="button">Remover</button>
+        <button id="btnManualCancel" class="cb-btn cb-btn-ghost" type="button">Cancelar</button>
+      </div>
+
+      <div class="cb-toolbar">
+        <label class="cb-switch-row">
+          <input type="checkbox" id="chkAuto" />
+          <span>Envio automático</span>
+        </label>
+        <button id="btnSendAll" class="cb-btn cb-btn-primary" type="button">Enviar para todos pendentes</button>
+        <button id="btnStop" class="cb-btn cb-btn-danger hidden" type="button">Parar</button>
+        <div id="progress" class="cb-progress hidden">
+          <div class="cb-progress-bar"><div id="progressFill" class="cb-progress-fill"></div></div>
+          <span id="progressLabel" class="cb-progress-label"></span>
+        </div>
+      </div>
+
+      <table class="cb-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Business Manager</th>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Detalhe</th>
+            <th>Quando</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div id="toast" class="cb-toast hidden"></div>
+  </div>
+
+  <script src="tab.js"></script>
+</body>
+</html>

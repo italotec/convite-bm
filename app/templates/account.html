@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <div class="card">
+    <div class="font-semibold mb-3">E-mail de convite</div>
+    <p class="text-sm text-zinc-400 mb-4">Todo convite enviado pela extensão vai para este único e-mail.</p>
+    <form method="post" action="{{ url_for('account.save_email') }}" class="flex gap-2">
+      <input type="email" name="invite_email" required placeholder="seuemail@exemplo.com"
+             value="{{ current_user.invite_email or '' }}"
+             class="input flex-1" />
+      <button type="submit" class="btn bg-emerald-700 hover:bg-emerald-600">Salvar</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="font-semibold mb-3">Chave de API</div>
+    <div class="flex gap-2">
+      <input type="text" readonly value="{{ current_user.api_key }}" class="input flex-1 font-mono text-xs" onclick="this.select()" />
+      <form method="post" action="{{ url_for('account.rotate_key') }}" onsubmit="return confirm('Renovar a chave invalida a extensão já baixada. Continuar?');">
+        <button type="submit" class="btn bg-zinc-800 hover:bg-zinc-700">Renovar</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="font-semibold mb-3">Envio automático</div>
+    <form method="post" action="{{ url_for('account.save_auto') }}" class="space-y-3">
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="auto_invite_enabled" {% if current_user.auto_invite_enabled %}checked{% endif %} />
+        Convidar automaticamente todos os BMs ainda não convidados ao abrir a extensão
+      </label>
+      <div>
+        <label class="text-sm text-zinc-400 block mb-1">Intervalo entre convites (ms)</label>
+        <input type="number" name="invite_delay_ms" min="1000" max="60000" step="500"
+               value="{{ current_user.invite_delay_ms }}" class="input" style="max-width: 200px" />
+      </div>
+      <button type="submit" class="btn bg-emerald-700 hover:bg-emerald-600">Salvar preferências</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="font-semibold mb-3">Extensão personalizada</div>
+    {% if current_user.invite_email %}
+      <p class="text-sm text-zinc-400 mb-4">Baixe a extensão já configurada com sua chave de API e seu e-mail de convite.</p>
+      <a href="{{ url_for('extension.download') }}" class="btn bg-cyan-700 hover:bg-cyan-600 inline-block">Baixar extensão personalizada</a>
+    {% else %}
+      <p class="text-sm text-zinc-500">Defina um e-mail de convite acima para liberar o download da extensão.</p>
+      <button disabled class="btn bg-zinc-800 text-zinc-500 cursor-not-allowed">Baixar extensão personalizada</button>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

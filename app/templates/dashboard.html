@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if not current_user.invite_email %}
+<div class="card mb-6 border-yellow-700 bg-yellow-950/20">
+  <div class="font-semibold text-yellow-300 mb-1">Defina seu e-mail de convite</div>
+  <div class="text-sm text-zinc-300">Antes de baixar a extensão você precisa configurar o e-mail que receberá os convites.
+    <a href="{{ url_for('account.account_page') }}" class="text-cyan-400 hover:underline">Ir para Minha Conta &rarr;</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="text-xs text-zinc-400 mb-1">Convites enviados</div>
+    <div class="text-2xl font-bold text-emerald-400">{{ total_sent }}</div>
+  </div>
+  <div class="card">
+    <div class="text-xs text-zinc-400 mb-1">Falhas</div>
+    <div class="text-2xl font-bold text-red-400">{{ total_failed }}</div>
+  </div>
+  <div class="card">
+    <div class="text-xs text-zinc-400 mb-1">BMs únicos convidados</div>
+    <div class="text-2xl font-bold text-cyan-400">{{ unique_bms }}</div>
+  </div>
+  <div class="card">
+    <div class="text-xs text-zinc-400 mb-1">Enviados hoje</div>
+    <div class="text-2xl font-bold text-zinc-100">{{ sent_today }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="flex items-center justify-between mb-3">
+    <div class="font-semibold">Convites recentes</div>
+    <a href="{{ url_for('invites.invites_page') }}" class="text-xs text-cyan-400 hover:underline">ver todos &rarr;</a>
+  </div>
+  {% if recent_invites %}
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-zinc-500 border-b border-zinc-800">
+          <th class="py-2 pr-3">Business Manager</th>
+          <th class="py-2 pr-3">E-mail</th>
+          <th class="py-2 pr-3">Perfil AdsPower</th>
+          <th class="py-2 pr-3">Status</th>
+          <th class="py-2 pr-3">Quando</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in recent_invites %}
+        <tr class="border-b border-zinc-900 last:border-0">
+          <td class="py-2 pr-3">
+            <div class="font-medium">{{ inv.business_name or "—" }}</div>
+            <div class="text-xs text-zinc-500 font-mono">{{ inv.business_id }}</div>
+          </td>
+          <td class="py-2 pr-3 text-zinc-300">{{ inv.email }}</td>
+          <td class="py-2 pr-3 text-zinc-400 text-xs font-mono">
+            {{ inv.adspower_profile_id or "—" }}{% if inv.adspower_serial %} · nº {{ inv.adspower_serial }}{% endif %}
+          </td>
+          <td class="py-2 pr-3">
+            {% if inv.status == 'sent' %}
+              <span class="badge bg-emerald-900 text-emerald-300">enviado</span>
+            {% else %}
+              <span class="badge bg-red-900 text-red-300">falhou</span>
+            {% endif %}
+            {% if inv.trigger == 'auto' %}<span class="badge bg-zinc-800 text-zinc-400 ml-1">auto</span>{% endif %}
+          </td>
+          <td class="py-2 pr-3 text-zinc-500 text-xs">{{ inv.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="text-sm text-zinc-500">Nenhum convite ainda. Baixe a extensão em Minha Conta para começar.</div>
+  {% endif %}
+</div>
+{% endblock %}

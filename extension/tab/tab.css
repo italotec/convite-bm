@@ -1,0 +1,177 @@
+/* Extension pages can't load the Tailwind CDN (blocked by the MV3 CSP), so this mirrors the web
+   app's zinc-950/zinc-800 dark palette by hand — same visual language as app/static/app.css. */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #09090b;
+  color: #f4f4f5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+}
+
+.cb-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.cb-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.cb-mark {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: #27272a;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+.cb-title { flex: 1; }
+.cb-name { font-size: 18px; font-weight: 600; }
+.cb-tag { font-size: 12px; color: #a1a1aa; }
+
+.cb-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.cb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: #f4f4f5;
+  background: #27272a;
+}
+.cb-btn:hover { background: #3f3f46; }
+.cb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.cb-btn-ghost { background: transparent; border-color: #3f3f46; }
+.cb-btn-primary { background: #047857; }
+.cb-btn-primary:hover { background: #059669; }
+.cb-btn-secondary { background: #0e7490; }
+.cb-btn-secondary:hover { background: #0891b2; }
+.cb-btn-danger { background: #7f1d1d; }
+.cb-btn-danger:hover { background: #991b1b; }
+.cb-btn-xs { padding: 4px 10px; font-size: 12px; }
+
+.cb-link-btn {
+  background: none; border: none; color: #22d3ee; font-size: 12px; cursor: pointer; padding: 0;
+}
+.cb-link-btn:hover { text-decoration: underline; }
+
+.cb-empty {
+  border: 1px solid #3f3f46;
+  background: rgba(24,24,27,.6);
+  border-radius: 12px;
+  padding: 24px;
+  color: #a1a1aa;
+  line-height: 1.6;
+}
+
+.cb-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.cb-summary-item {
+  background: rgba(24,24,27,.6);
+  border: 1px solid #3f3f46;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cb-k { font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: .03em; }
+.cb-v { font-size: 14px; font-weight: 600; }
+
+.cb-manual-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.cb-input {
+  background: #09090b;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #f4f4f5;
+  font-size: 13px;
+}
+
+.cb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.cb-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cb-progress { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px; }
+.cb-progress-bar { flex: 1; height: 6px; background: #27272a; border-radius: 999px; overflow: hidden; }
+.cb-progress-fill { height: 100%; width: 0%; background: #10b981; transition: width .2s; }
+.cb-progress-label { font-size: 12px; color: #a1a1aa; white-space: nowrap; }
+
+.cb-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cb-table thead th {
+  text-align: left;
+  color: #a1a1aa;
+  font-weight: 500;
+  border-bottom: 1px solid #27272a;
+  padding: 8px 10px;
+}
+.cb-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #18181b;
+  vertical-align: middle;
+}
+.cb-bm-pic {
+  width: 24px; height: 24px; border-radius: 6px; object-fit: cover; background: #27272a;
+}
+.cb-bm-name { font-weight: 500; }
+
+.cb-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.cb-badge-pending { background: #3f3f46; color: #d4d4d8; }
+.cb-badge-sent { background: #064e3b; color: #6ee7b7; }
+.cb-badge-failed { background: #7f1d1d; color: #fca5a5; }
+.cb-badge-running { background: #78350f; color: #fcd34d; }
+.cb-badge-skip { background: #27272a; color: #71717a; }
+.cb-badge-manual { background: #27272a; color: #a1a1aa; margin-left: 4px; }
+
+.cb-detail { color: #a1a1aa; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cb-toast {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 50;
+}
+.cb-toast.ok { background: #064e3b; color: #6ee7b7; border: 1px solid #047857; }
+.cb-toast.err { background: #7f1d1d; color: #fca5a5; border: 1px solid #b91c1c; }
+
+.hidden { display: none !important; }

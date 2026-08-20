@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+
+<a href="{{ url_for('admin.admin_users') }}" class="text-sm text-cyan-400 hover:underline">&larr; Usuários</a>
+
+<div class="card my-4">
+  <div class="font-semibold mb-2">{{ u.username }}</div>
+  <div class="text-sm text-zinc-400 space-y-1">
+    <div>E-mail de convite: <span class="text-zinc-200">{{ u.invite_email or "—" }}</span></div>
+    <div>Chave de API: <span class="text-zinc-200 font-mono text-xs">{{ u.api_key }}</span></div>
+    <div>Envio automático: <span class="text-zinc-200">{{ "ativado" if u.auto_invite_enabled else "desativado" }} ({{ u.invite_delay_ms }}ms)</span></div>
+  </div>
+  <form method="post" action="{{ url_for('admin.reset_password', user_id=u.id) }}" class="mt-3">
+    <button type="submit" class="btn bg-zinc-800 hover:bg-zinc-700 text-xs">Resetar senha</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="font-semibold mb-3">Histórico de convites</div>
+  {% if invites %}
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-zinc-500 border-b border-zinc-800">
+          <th class="py-2 pr-3">Business Manager</th>
+          <th class="py-2 pr-3">E-mail</th>
+          <th class="py-2 pr-3">Perfil AdsPower</th>
+          <th class="py-2 pr-3">Status</th>
+          <th class="py-2 pr-3">Quando</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invites %}
+        <tr class="border-b border-zinc-900 last:border-0">
+          <td class="py-2 pr-3">
+            <div class="font-medium">{{ inv.business_name or "—" }}</div>
+            <div class="text-xs text-zinc-500 font-mono">{{ inv.business_id }}</div>
+          </td>
+          <td class="py-2 pr-3 text-zinc-300">{{ inv.email }}</td>
+          <td class="py-2 pr-3 text-zinc-400 text-xs font-mono">{{ inv.adspower_profile_id or "—" }}</td>
+          <td class="py-2 pr-3">
+            {% if inv.status == 'sent' %}
+              <span class="badge bg-emerald-900 text-emerald-300">enviado</span>
+            {% else %}
+              <span class="badge bg-red-900 text-red-300">falhou</span>
+            {% endif %}
+          </td>
+          <td class="py-2 pr-3 text-zinc-500 text-xs">{{ inv.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <div class="text-sm text-zinc-500">Nenhum convite ainda.</div>
+  {% endif %}
+</div>
+{% endblock %}
