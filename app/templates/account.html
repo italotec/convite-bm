@@ -3,17 +3,6 @@
 <div class="max-w-2xl mx-auto space-y-6">
 
   <div class="card">
-    <div class="font-semibold mb-3">E-mail de convite</div>
-    <p class="text-sm text-zinc-400 mb-4">Todo convite enviado pela extensão vai para este único e-mail.</p>
-    <form method="post" action="{{ url_for('account.save_email') }}" class="flex gap-2">
-      <input type="email" name="invite_email" required placeholder="seuemail@exemplo.com"
-             value="{{ current_user.invite_email or '' }}"
-             class="input flex-1" />
-      <button type="submit" class="btn bg-emerald-700 hover:bg-emerald-600">Salvar</button>
-    </form>
-  </div>
-
-  <div class="card">
     <div class="font-semibold mb-3">Chave de API</div>
     <div class="flex gap-2">
       <input type="text" readonly value="{{ current_user.api_key }}" class="input flex-1 font-mono text-xs" onclick="this.select()" />
@@ -41,13 +30,8 @@
 
   <div class="card">
     <div class="font-semibold mb-3">Extensão personalizada</div>
-    {% if current_user.invite_email %}
-      <p class="text-sm text-zinc-400 mb-4">Baixe a extensão já configurada com sua chave de API e seu e-mail de convite.</p>
-      <a href="{{ url_for('extension.download') }}" class="btn bg-cyan-700 hover:bg-cyan-600 inline-block">Baixar extensão personalizada</a>
-    {% else %}
-      <p class="text-sm text-zinc-500">Defina um e-mail de convite acima para liberar o download da extensão.</p>
-      <button disabled class="btn bg-zinc-800 text-zinc-500 cursor-not-allowed">Baixar extensão personalizada</button>
-    {% endif %}
+    <p class="text-sm text-zinc-400 mb-4">Baixe a extensão já configurada com sua chave de API. Cada Business Manager convidado recebe sua própria caixa de e-mail descartável, gerada automaticamente.</p>
+    <a href="{{ url_for('extension.download') }}" class="btn bg-cyan-700 hover:bg-cyan-600 inline-block">Baixar extensão personalizada</a>
   </div>
 
 </div>

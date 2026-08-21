@@ -6,7 +6,7 @@
 const els = {
   noContext: document.getElementById("viewNoContext"),
   main: document.getElementById("viewMain"),
-  email: document.getElementById("fEmail"),
+  mailboxCount: document.getElementById("fMailboxes"),
   profile: document.getElementById("fProfile"),
   total: document.getElementById("fTotal"),
   already: document.getElementById("fAlready"),
@@ -36,13 +36,13 @@ let state = {};
 function resetState() {
   state = {
     tabId: null,
-    email: "",
     taskIds: [],
     autoEnabled: false,
     delayMs: 4000,
     profile: null,
     businesses: [],   // [{id, name, pictureUrl}]
     already: new Set(),
+    mailboxes: new Map(), // business_id -> {address, inboxUrl}
     rowStatus: new Map(), // id -> {status, detail, when, trigger}
     running: false,
     stopRequested: false,
@@ -240,11 +240,16 @@ function renderRows() {
     const img = b.pictureUrl
       ? `<img class="cb-bm-pic" src="${escapeHtml(b.pictureUrl)}" alt="" />`
       : `<div class="cb-bm-pic"></div>`;
+    const mb = state.mailboxes.get(b.id);
+    const mailCell = mb
+      ? `<a class="cb-mail-link" href="${escapeHtml(mb.inboxUrl || "")}" target="_blank" rel="noopener">${escapeHtml(mb.address)}</a>`
+      : "—";
     return `
       <tr data-id="${escapeHtml(b.id)}">
         <td>${img}</td>
         <td class="cb-bm-name">${escapeHtml(b.name || "—")}</td>
         <td class="cb-mono">${escapeHtml(b.id)}</td>
+        <td class="cb-mono">${mailCell}</td>
         <td>${statusBadge(row)}${trigBadge}</td>
         <td class="cb-detail" title="${escapeHtml(row && row.detail)}">${escapeHtml((row && row.detail) || "—")}</td>
         <td class="cb-mono">${row && row.when ? new Date(row.when).toLocaleString("pt-BR") : "—"}</td>
@@ -264,6 +269,7 @@ function updateSummary() {
     return state.already.has(b.id) || (r && r.status === "sent");
   }).length;
   els.already.textContent = String(alreadyCount);
+  els.mailboxCount.textContent = String(state.mailboxes.size);
 }
 
 function renderProfileRow() {
@@ -331,9 +337,38 @@ async function inviteOne(business, trigger) {
   state.rowStatus.set(business.id, { status: "running", trigger });
   renderRows();
 
+  let mb = state.mailboxes.get(business.id);
+  if (!mb) {
+    const allocResp = await sendToBg({
+      type: "cb-alloc-mailbox", businessId: business.id, businessName: business.name || "",
+    });
+    if (!allocResp || !allocResp.ok) {
+      const errorMessage = (allocResp && allocResp.error) || "falha ao gerar e-mail";
+      state.rowStatus.set(business.id, { status: "failed", detail: errorMessage, when: Date.now(), trigger });
+      renderRows();
+      updateSummary();
+      await sendToBg({
+        type: "cb-report-invite",
+        payload: {
+          business_id: business.id,
+          business_name: business.name || "",
+          business_picture_url: business.pictureUrl || "",
+          status: "failed",
+          trigger,
+          error_message: errorMessage,
+        },
+      });
+      return false;
+    }
+    mb = { address: allocResp.address, inboxUrl: allocResp.inbox_url };
+    state.mailboxes.set(business.id, mb);
+    renderRows();
+    updateSummary();
+  }
+
   const resp = await sendToTab(state.tabId, {
     type: "cb-run-query", key: "invite",
-    ctx: { businessId: business.id, email: state.email, taskIds: state.taskIds },
+    ctx: { businessId: business.id, email: mb.address, taskIds: state.taskIds },
   }, 25000);
 
   const result = resp.ok && resp.result;
@@ -341,6 +376,7 @@ async function inviteOne(business, trigger) {
     business_id: business.id,
     business_name: business.name || "",
     business_picture_url: business.pictureUrl || "",
+    mailbox_address: mb.address,
     trigger,
   };
 
@@ -432,7 +468,6 @@ async function loadConfigAndProfile() {
     return false;
   }
 
-  state.email = cfgResp.email || "";
   state.taskIds = cfgResp.business_account_task_ids || [];
   state.autoEnabled = !!cfgResp.auto_invite_enabled;
   state.delayMs = cfgResp.invite_delay_ms || 4000;
@@ -443,7 +478,6 @@ async function loadConfigAndProfile() {
     state.autoEnabled = override[AUTO_STORAGE_KEY];
   }
 
-  els.email.textContent = state.email || "não configurado";
   els.chkAuto.checked = state.autoEnabled;
   renderProfileRow();
   return true;
@@ -463,10 +497,13 @@ async function loadBusinessesAndAlready() {
 
   const idsResp = businesses.length
     ? await sendToBg({ type: "cb-check-invites", businessIds: businesses.map((b) => b.id) })
-    : { ok: true, already: [] };
+    : { ok: true, already: [], mailboxes: {} };
   state.already = new Set((idsResp && idsResp.already) || []);
   for (const id of state.already) {
     if (!state.rowStatus.has(id)) state.rowStatus.set(id, { status: "skip" });
+  }
+  for (const [id, mb] of Object.entries((idsResp && idsResp.mailboxes) || {})) {
+    state.mailboxes.set(id, { address: mb.address, inboxUrl: mb.inbox_url });
   }
 
   renderRows();
@@ -497,6 +534,9 @@ async function syncNewBusinesses() {
   for (const id of (idsResp && idsResp.already) || []) {
     state.already.add(id);
     state.rowStatus.set(id, { status: "skip" });
+  }
+  for (const [id, mb] of Object.entries((idsResp && idsResp.mailboxes) || {})) {
+    state.mailboxes.set(id, { address: mb.address, inboxUrl: mb.inbox_url });
   }
 
   renderRows();

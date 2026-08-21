@@ -16,6 +16,9 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
 
+    from .services.tempmail import inbox_url
+    app.jinja_env.globals["inbox_url"] = inbox_url
+
     from .routes.auth import bp as auth_bp
     from .routes.dashboard import bp as dashboard_bp
     from .routes.account import bp as account_bp

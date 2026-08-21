@@ -1,13 +1,13 @@
 """Builds a per-user ZIP of extension/ (the "Convite BM" browser extension) with the current
-user's API key, base URL and invite email baked in, so it authenticates and knows who to invite
-on install with no manual config. Mirrors I:\\Manager Lite\\app\\routes\\extension_bp.py.
+user's API key and base URL baked in, so it authenticates on install with no manual config.
+Mirrors I:\\Manager Lite\\app\\routes\\extension_bp.py.
 """
 import io
 import json
 import os
 import zipfile
 
-from flask import Blueprint, request, send_file, flash, redirect, url_for
+from flask import Blueprint, request, send_file
 from flask_login import login_required, current_user
 
 from ..config import Config
@@ -21,10 +21,6 @@ _HOST_PLACEHOLDER = "__CONVITE_BASE_URL__/*"
 @bp.route("/download")
 @login_required
 def download():
-    if not current_user.invite_email:
-        flash("Defina seu e-mail de convite antes de baixar a extensão.", "error")
-        return redirect(url_for("account.account_page"))
-
     base_url = (Config.CONVITE_BASE_URL or request.host_url).rstrip("/")
 
     buf = io.BytesIO()
@@ -42,8 +38,7 @@ def download():
         config_js = (
             "self.__CB_CONFIG__ = {\n"
             f"  apiKey: {json.dumps(current_user.api_key or '')},\n"
-            f"  baseUrl: {json.dumps(base_url)},\n"
-            f"  email: {json.dumps(current_user.invite_email or '')}\n"
+            f"  baseUrl: {json.dumps(base_url)}\n"
             "};\n"
         )
         zf.writestr("config.js", config_js)

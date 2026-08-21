@@ -65,6 +65,9 @@ body {
 }
 .cb-link-btn:hover { text-decoration: underline; }
 
+.cb-mail-link { color: #22d3ee; text-decoration: none; }
+.cb-mail-link:hover { text-decoration: underline; }
+
 .cb-empty {
   border: 1px solid #3f3f46;
   background: rgba(24,24,27,.6);

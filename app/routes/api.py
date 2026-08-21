@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import current_user
+from sqlalchemy.exc import IntegrityError
 
 from .. import db
-from ..models import User, Invite
+from ..models import User, Invite, BusinessMailbox
+from ..services.tempmail import create_mailbox, inbox_url, TempMailError
 
 bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
@@ -42,7 +44,6 @@ def me():
     return jsonify({
         "ok": True,
         "username": user.username,
-        "email": user.invite_email or "",
         "auto_invite_enabled": bool(user.auto_invite_enabled),
         "invite_delay_ms": user.invite_delay_ms,
         "business_account_task_ids": current_app.config["BUSINESS_ACCOUNT_TASK_IDS"],
@@ -62,7 +63,7 @@ def invites_check():
     business_ids = [str(b).strip() for b in business_ids if str(b).strip()]
 
     if not business_ids:
-        return jsonify({"ok": True, "already": []})
+        return jsonify({"ok": True, "already": [], "mailboxes": {}})
 
     rows = (
         Invite.query.with_entities(Invite.business_id)
@@ -75,7 +76,62 @@ def invites_check():
         .all()
     )
     already = [r[0] for r in rows]
-    return jsonify({"ok": True, "already": already})
+
+    mailbox_rows = BusinessMailbox.query.filter(
+        BusinessMailbox.user_id == user.id,
+        BusinessMailbox.business_id.in_(business_ids),
+    ).all()
+    mailboxes = {
+        mb.business_id: {"address": mb.address, "inbox_url": inbox_url(mb.address)}
+        for mb in mailbox_rows
+    }
+
+    return jsonify({"ok": True, "already": already, "mailboxes": mailboxes})
+
+
+@bp.route("/mailbox", methods=["POST"])
+def alloc_mailbox():
+    """Allocate (or reuse) the disposable mailbox for one Business Manager. Idempotent — calling
+    it again for a BM that already has a mailbox returns the same address (created: false)."""
+    user, err = _authenticate()
+    if err:
+        return err
+
+    body = request.get_json(silent=True) or {}
+    business_id = str(body.get("business_id") or "").strip()
+    if not business_id:
+        return jsonify({"ok": False, "error": "business_id is required."}), 400
+    business_name = str(body.get("business_name") or "")[:255]
+
+    existing = BusinessMailbox.query.filter_by(user_id=user.id, business_id=business_id).first()
+    if existing:
+        return jsonify({
+            "ok": True, "address": existing.address, "inbox_url": inbox_url(existing.address), "created": False,
+        })
+
+    try:
+        address = create_mailbox()
+    except TempMailError as e:
+        return jsonify({"ok": False, "error": str(e)}), 502
+
+    mailbox = BusinessMailbox(
+        user_id=user.id, business_id=business_id, business_name=business_name, address=address,
+    )
+    db.session.add(mailbox)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Two concurrent requests raced on the same (user, business_id) — the loser just reuses
+        # the winner's row instead of creating (and orphaning) a second mailbox.
+        db.session.rollback()
+        existing = BusinessMailbox.query.filter_by(user_id=user.id, business_id=business_id).first()
+        if existing:
+            return jsonify({
+                "ok": True, "address": existing.address, "inbox_url": inbox_url(existing.address), "created": False,
+            })
+        raise
+
+    return jsonify({"ok": True, "address": mailbox.address, "inbox_url": inbox_url(mailbox.address), "created": True})
 
 
 @bp.route("/invites", methods=["POST"])
@@ -83,9 +139,6 @@ def create_invite():
     user, err = _authenticate()
     if err:
         return err
-
-    if not user.invite_email:
-        return jsonify({"ok": False, "error": "Usuário sem e-mail de convite configurado em /conta."}), 400
 
     body = request.get_json(silent=True)
     if not body:
@@ -98,6 +151,14 @@ def create_invite():
     status = str(body.get("status") or "").strip()
     if status not in ("sent", "failed"):
         return jsonify({"ok": False, "error": "status must be 'sent' or 'failed'."}), 400
+
+    mailbox = BusinessMailbox.query.filter_by(user_id=user.id, business_id=business_id).first()
+    email = mailbox.address if mailbox else str(body.get("mailbox_address") or "").strip()[:255]
+    if not email and status == "sent":
+        # A "sent" report must always carry the address the invite actually went to. A "failed"
+        # report (e.g. mailbox allocation itself failed, before any invite was attempted) is
+        # still logged with an empty email so the row shows up with its error_message.
+        return jsonify({"ok": False, "error": "Nenhuma caixa de e-mail alocada para este Business Manager."}), 400
 
     trigger = str(body.get("trigger") or "manual").strip()
     if trigger not in ("auto", "manual"):
@@ -114,7 +175,7 @@ def create_invite():
         business_id=business_id,
         business_name=str(body.get("business_name") or "")[:255],
         business_picture_url=str(body.get("business_picture_url") or ""),
-        email=user.invite_email,
+        email=email,
         status=status,
         role_request_id=str(body.get("role_request_id") or "")[:64],
         role_request_status=str(body.get("role_request_status") or "")[:32],

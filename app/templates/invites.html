@@ -15,6 +15,10 @@
         <option value="failed" {% if status == 'failed' %}selected{% endif %}>Falhou</option>
       </select>
     </div>
+    <div>
+      <label class="text-xs text-zinc-400 block mb-1">Perfil AdsPower</label>
+      <input type="text" name="profile" value="{{ profile }}" class="input" />
+    </div>
     <button type="submit" class="btn bg-emerald-700 hover:bg-emerald-600">Filtrar</button>
   </form>
 </div>
@@ -26,7 +30,7 @@
       <thead>
         <tr class="text-left text-zinc-500 border-b border-zinc-800">
           <th class="py-2 pr-3">Business Manager</th>
-          <th class="py-2 pr-3">E-mail</th>
+          <th class="py-2 pr-3">Caixa de entrada</th>
           <th class="py-2 pr-3">Perfil AdsPower</th>
           <th class="py-2 pr-3">Status</th>
           <th class="py-2 pr-3">Detalhe</th>
@@ -40,7 +44,14 @@
             <div class="font-medium">{{ inv.business_name or "—" }}</div>
             <div class="text-xs text-zinc-500 font-mono">{{ inv.business_id }}</div>
           </td>
-          <td class="py-2 pr-3 text-zinc-300">{{ inv.email }}</td>
+          <td class="py-2 pr-3">
+            {% set url = inbox_url(inv.email) %}
+            {% if url %}
+              <a href="{{ url }}" target="_blank" rel="noopener" class="text-cyan-400 hover:underline font-mono text-xs">{{ inv.email }}</a>
+            {% else %}
+              <span class="text-zinc-400 font-mono text-xs">{{ inv.email or "—" }}</span>
+            {% endif %}
+          </td>
           <td class="py-2 pr-3 text-zinc-400 text-xs font-mono">
             {{ inv.adspower_profile_id or "—" }}{% if inv.adspower_serial %} · nº {{ inv.adspower_serial }}{% endif %}
           </td>

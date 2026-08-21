@@ -21,6 +21,10 @@ def invites_page():
     if status in ("sent", "failed"):
         q = q.filter_by(status=status)
 
+    profile = (request.args.get("profile") or "").strip()
+    if profile:
+        q = q.filter(Invite.adspower_profile_id == profile)
+
     rows = q.order_by(Invite.created_at.desc()).limit(500).all()
 
     return render_template(
@@ -29,4 +33,5 @@ def invites_page():
         rows=rows,
         search=search,
         status=status,
+        profile=profile,
     )

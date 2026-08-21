@@ -25,8 +25,9 @@ class User(db.Model, UserMixin):
 
     api_key = db.Column(db.String(64), unique=True, nullable=True, index=True)
 
-    # The single email this user's BM invites are sent to. Set once in /conta; the
-    # extension never chooses a recipient, it always uses whatever is here.
+    # Legacy: single email every invite used to be sent to, before per-BM disposable mailboxes
+    # (see BusinessMailbox). No longer read or written; kept only so historical Invite rows that
+    # predate this column's retirement still resolve correctly if ever cross-referenced.
     invite_email = db.Column(db.String(255), nullable=True)
 
     auto_invite_enabled = db.Column(db.Boolean, default=True, nullable=False)
@@ -35,6 +36,7 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, default=_now_sp, nullable=False)
 
     invites = db.relationship("Invite", backref="user", lazy=True, cascade="all, delete-orphan")
+    mailboxes = db.relationship("BusinessMailbox", backref="user", lazy=True, cascade="all, delete-orphan")
 
     def generate_api_key(self):
         self.api_key = secrets.token_urlsafe(32)
@@ -63,7 +65,7 @@ class Invite(db.Model):
     business_name = db.Column(db.String(255), default="", nullable=False)
     business_picture_url = db.Column(db.Text, default="", nullable=False)
 
-    email = db.Column(db.String(255), nullable=False)  # snapshot of invite_email at send time
+    email = db.Column(db.String(255), nullable=False)  # BusinessMailbox address this invite was sent to
 
     status = db.Column(db.String(16), default="sent", nullable=False)  # sent | failed
     role_request_id = db.Column(db.String(64), default="", nullable=False)
@@ -82,4 +84,23 @@ class Invite(db.Model):
 
     __table_args__ = (
         db.Index("ix_invite_user_business", "user_id", "business_id"),
+    )
+
+
+class BusinessMailbox(db.Model):
+    """One disposable inbox per (user, business_id). Allocated on the first invite attempt and
+    reused forever after, so a BM's address never changes across retries."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+
+    business_id = db.Column(db.String(64), nullable=False, index=True)
+    business_name = db.Column(db.String(255), default="", nullable=False)
+
+    address = db.Column(db.String(255), unique=True, nullable=False)
+
+    created_at = db.Column(db.DateTime, default=_now_sp, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "business_id", name="uq_mailbox_user_business"),
     )

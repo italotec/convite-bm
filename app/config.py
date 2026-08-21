@@ -27,6 +27,12 @@ class Config:
     # host_permissions). Falls back to request.host_url when unset.
     CONVITE_BASE_URL = os.getenv("CONVITE_BASE_URL", "")
 
+    # Disposable-mailbox platform (mail.verifywaba.store) — one mailbox per Business Manager,
+    # allocated server-side. No auth on that API; see app/services/tempmail.py.
+    TEMPMAIL_BASE_URL = os.getenv("TEMPMAIL_BASE_URL", "https://mail.verifywaba.store")
+    TEMPMAIL_DOMAIN = os.getenv("TEMPMAIL_DOMAIN", "alndigital.com")
+    TEMPMAIL_TIMEOUT = int(os.getenv("TEMPMAIL_TIMEOUT", "15"))
+
     # Business-level task ids granted on invite — full BM access, no per-asset scoping.
     # Captured from enviarconvitebm.har (BizKitSettingsInvitePeopleModalMutation). Served
     # to the extension via /api/v1/me so a Meta-side change never requires reshipping it.

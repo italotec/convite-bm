@@ -15,7 +15,7 @@ try {
 } catch (e) {
   CONFIG_ERROR = String((e && e.message) || e);
 }
-const CFG = self.__CB_CONFIG__ || { apiKey: "", baseUrl: "http://localhost:5020", email: "" };
+const CFG = self.__CB_CONFIG__ || { apiKey: "", baseUrl: "http://localhost:5020" };
 if (!self.__CB_CONFIG__ && !CONFIG_ERROR) {
   CONFIG_ERROR = "config.js não definiu __CB_CONFIG__.";
 }
@@ -186,6 +186,23 @@ async function checkInvites(businessIds) {
   }
 }
 
+async function allocMailbox(businessId, businessName) {
+  const err = configError();
+  if (err) return { ok: false, error: err };
+  try {
+    const resp = await fetchWithTimeout(`${apiBase()}/api/v1/mailbox`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${CFG.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ business_id: businessId, business_name: businessName || "" }),
+    }, 20000);
+    const body = await resp.json().catch(() => ({}));
+    if (!resp.ok || !body.ok) return { ok: false, error: body.error || `HTTP ${resp.status}` };
+    return body;
+  } catch (e) {
+    return { ok: false, error: e && e.name === "AbortError" ? "timeout ao gerar e-mail" : String(e) };
+  }
+}
+
 async function reportInvite(payload) {
   const err = configError();
   if (err) return { ok: false, error: err };
@@ -232,6 +249,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg.type === "cb-check-invites") {
     checkInvites(msg.businessIds || []).then(sendResponse);
+    return true;
+  }
+  if (msg.type === "cb-alloc-mailbox") {
+    allocMailbox(msg.businessId, msg.businessName).then(sendResponse);
     return true;
   }
   if (msg.type === "cb-report-invite") {
